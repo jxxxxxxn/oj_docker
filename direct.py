@@ -81,6 +81,7 @@ class DirectSeleniumWorker(object):
         options.add_argument('--headless')
         options.binary_location = self.backend.chrome_path
         options.add_argument('--no-sandbox')
+        options.add_argument('--lang=ko-KR')
         options.add_argument('--disable-dev-shm-usage')
         browser = webdriver.Chrome(service=service, options=options)
         browser.get('file://%s' % self.input_html_file)

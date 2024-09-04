@@ -1,4 +1,4 @@
-import os
+    import os
 import shutil
 import subprocess
 import tempfile
@@ -78,9 +78,10 @@ class DirectSeleniumWorker(object):
     def html_to_pdf(self, *, header_template, footer_template, wait_for):
         service = Service(executable_path=self.backend.chromedriver_path)
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
+        .add_argument('--headless')
         options.binary_location = self.backend.chrome_path
         options.add_argument('--no-sandbox')
+        options.add_argument("accept-language=ko-KR")
         options.add_argument('--disable-dev-shm-usage')
         browser = webdriver.Chrome(service=service, options=options)
         browser.get('file://%s' % self.input_html_file)

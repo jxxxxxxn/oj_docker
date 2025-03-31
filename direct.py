@@ -15,6 +15,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.service import Service
+
+
 class DirectSeleniumBackend(object):
     def __init__(self):
         self.chromedriver_path = os.environ.get('CHROMEDRIVER_PATH', 'chromedriver')
@@ -30,7 +32,7 @@ class DirectSeleniumBackend(object):
                 header_template=header_template,
                 footer_template=footer_template,
                 wait_for=wait_for,
-        )
+            )
         return result
 
 
@@ -72,16 +74,25 @@ class DirectSeleniumWorker(object):
         return {'pdf': pdf}
 
     def get_log(self, driver):
-        return '\n'.join(map(str, driver.get_log('driver') + driver.get_log('browser')))
+        try:
+            return '\n'.join(map(str, driver.get_log('driver') + driver.get_log('browser')))
+        except Exception:
+            return 'No logs available.'
 
     @gen.coroutine
     def html_to_pdf(self, *, header_template, footer_template, wait_for):
         service = Service(executable_path=self.backend.chromedriver_path)
         options = webdriver.ChromeOptions()
-        options.add_argument('--headless')
         options.binary_location = self.backend.chrome_path
+
+        # 핵심 headless 옵션 추가
+        options.add_argument('--headless=new')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--remote-debugging-port=9222')
+
         browser = webdriver.Chrome(service=service, options=options)
         browser.get('file://%s' % self.input_html_file)
 
@@ -104,10 +115,12 @@ class DirectSeleniumWorker(object):
 
         response = browser.execute_cdp_cmd('Page.printToPDF', template)
         if not response:
-            raise RuntimeError('no response from PDF printer:\n%s' % self.get_log(browser)) 
+            raise RuntimeError('No response from PDF printer:\n%s' % self.get_log(browser))
 
         with open(self.output_pdf_file, 'wb') as f:
             f.write(base64.b64decode(response['data']))
+
+        browser.quit()
 
     @gen.coroutine
     def set_pdf_title_with_exiftool(self, title):
